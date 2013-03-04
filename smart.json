@@ -1,0 +1,8 @@
+{
+  "name": "modelled-collection",
+  "description": "Wrap Meteor.Collection so it returns objects with a user defined prototype.",
+  "homepage": "https://github.com/tmeasday/meteor-modelled-collection",
+  "author": "Tom Coleman",
+  "version": "0.0.1",
+  "git": "https://github.com/tmeasday/meteor-modelled-collection.git"
+}
