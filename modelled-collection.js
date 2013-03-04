@@ -6,13 +6,18 @@
     
     return function(/* arguments */) {
       var args = _.map(arguments, function(arg, index) {
-        return arg && (_.contains(indices, index) ? new ctor(arg) : arg);
+        if (arg && _.contains(indices, index)) {
+          if (_.isArray(arg))
+            return _.map(arg, function(a) { return new ctor(a); });
+          else
+            return new ctor(arg);
+        } else {
+          return arg;
+        }
       });
-      cb.apply(this, args);
+      return cb.apply(this, args);
     }
   }
-      
-  
   
   // ModelledCollection wraps a collection, providing the same API
   // whilst initializing all objects that come out with a ctor
@@ -42,9 +47,28 @@
     }
   })
   
+  var securityModifier = function(ctor, options) {
+    if (options.insert)
+      options.insert = wrapCBWithModel(options.insert, ctor, 1);
+      
+    if (options.update)
+      options.update = wrapCBWithModel(options.update, ctor, 1);
+      
+    if (options.remove)
+      options.remove = wrapCBWithModel(options.remove, ctor, 1);    
+  }
   
-  
-  // TODO -- allow/deny
+  _.extend(Meteor.ModelledCollection.prototype, {
+    allow: function(options) {
+      securityModifier(this.ctor, options)
+      this.collection.allow(options);
+    },
+    
+    deny: function(options) {
+      securityModifier(this.ctor, options)
+      this.collection.deny(options);
+    }
+  });
   
   
   // ModelledCursor does the same for cursors

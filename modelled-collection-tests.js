@@ -85,3 +85,61 @@ Tinytest.add("modelled-collection - observe support", function (test) {
   collection.remove({a: 'bar'});
   test.equal(removed_called, 1);
 });
+
+var allowDenyCollection = new Meteor.ModelledCollection('modelled-collection-for-allow-deny', {ctor: Model});
+
+if (Meteor.isServer) {
+  allowDenyCollection.allow({
+    insert: function(userId, record) {
+      if (! record instanceof Model) throw new Meteor.Exception(555);
+      return true;
+    },
+    update: function(userId, records) {
+      _.each(records, function(record) {
+        if (! record instanceof Model) throw new Meteor.Exception(555);
+      });
+      return true;
+    },
+    remove: function(userId, records) {
+      _.each(records, function(record) {
+        if (! record instanceof Model) throw new Meteor.Exception(555);
+      });
+      return true;
+    }
+  });
+  allowDenyCollection.deny({
+    insert: function(userId, record) {
+      if (! record instanceof Model) throw new Meteor.Exception(555);
+      return false;
+    },
+    update: function(userId, records) {
+      _.each(records, function(record) {
+        if (! record instanceof Model) throw new Meteor.Exception(555);
+      });
+      return false;
+    },
+    remove: function(userId, records) {
+      _.each(records, function(record) {
+        if (! record instanceof Model) throw new Meteor.Exception(555);
+      });
+      return false;
+    }
+  })
+} else { // isClient
+  testAsyncMulti("modelled-collection - allow/deny support", [
+    function(test, expect) {
+      var id = allowDenyCollection.insert({a: 'b'}, expect(function(err) {
+        test.equal(err, undefined);
+      }));
+      
+      allowDenyCollection.update(id, {$set: {a: 'c'}}, expect(function(err) {
+        test.equal(err, undefined);
+      }));
+      
+      allowDenyCollection.remove(id, expect(function(err) {
+        test.equal(err, undefined);
+      }));
+    }
+  ]);
+}
+  
