@@ -1,4 +1,24 @@
 (function() {
+  // ModelledCollection wraps a collection, providing the same API
+  // whilst initializing all objects that come out with a ctor
+  Meteor.ModelledCollection = function(name, options) {
+    this.ctor = options.ctor;
+    this.collection = new Meteor.Collection(name, options);
+  }
+
+  _.extend(Meteor.ModelledCollection.prototype, {
+    find: function() {
+      var cursor = this.collection.find.apply(this.collection, _.toArray(arguments))
+      return new ModelledCursor(cursor, this.ctor);
+    },
+  
+    findOne: function () {
+      var object = this.collection.findOne.apply(this.collection, _.toArray(arguments))
+      return new this.ctor(object);
+    }
+  });
+  
+  
   // this function takes a callback and wraps it in a function that 
   // converts the numbered arguments into models.
   var wrapCBWithModel = function(cb, ctor) {
@@ -18,26 +38,6 @@
       return cb.apply(this, args);
     }
   }
-  
-  // ModelledCollection wraps a collection, providing the same API
-  // whilst initializing all objects that come out with a ctor
-  Meteor.ModelledCollection = function(name, options) {
-    this.ctor = options.ctor;
-    this.collection = new Meteor.Collection(name, options);
-  }
-
-  _.extend(Meteor.ModelledCollection.prototype, {
-    find: function() {
-      var cursor = this.collection.find.apply(this.collection, _.toArray(arguments))
-      return new ModelledCursor(cursor, this.ctor);
-    },
-  
-    findOne: function () {
-      var object = this.collection.findOne.apply(this.collection, _.toArray(arguments))
-      return new this.ctor(object);
-    },
-    
-  });
   
   // XXX: these just pass through to the encapsulated collection. 
   // is this the right behaviour?
@@ -112,13 +112,15 @@
       return this.cursor.count();
     },
     
-    observe: function(options) {
+    _wrapObserveOptionsForModelledCollection: function(options) {
       var self = this;
       
       if (options.added)
         options.added = wrapCBWithModel(options.added, self.ctor, 0);
       if (options.addedAt) 
         options.addedAt = wrapCBWithModel(options.addedAt, self.ctor, 0, 2);
+      if (options.addedBefore) 
+        options.addedBefore = wrapCBWithModel(options.addedBefore, self.ctor, 1, 2);
       
       if (options.changed) 
         options.changed = wrapCBWithModel(options.changed, self.ctor, 0, 1);
@@ -132,8 +134,20 @@
       
       if (options.movedTo)
         options.movedTo = wrapCBWithModel(options.movedTo, self.ctor, 0, 3);
+      if (options.movedBefore)
+        options.movedBefore = wrapCBWithModel(options.movedBefore, self.ctor, 1, 2);
       
-      return self.cursor.observe(options);
+      return options;
+    },
+  
+    observe: function(options) {
+      options = this._wrapObserveOptionsForModelledCollection(options);
+      return this.cursor.observe(options);
+    },
+    
+    observeChanges: function(options) {
+      options = this._wrapObserveOptionsForModelledCollection(options);
+      return this.cursor.observeChanges(options);
     }
   });
 }());
