@@ -111,16 +111,14 @@
     count: function() {
       return this.cursor.count();
     },
-    
-    _wrapObserveOptionsForModelledCollection: function(options) {
+  
+    observe: function(options) {
       var self = this;
       
       if (options.added)
         options.added = wrapCBWithModel(options.added, self.ctor, 0);
       if (options.addedAt) 
         options.addedAt = wrapCBWithModel(options.addedAt, self.ctor, 0, 2);
-      if (options.addedBefore) 
-        options.addedBefore = wrapCBWithModel(options.addedBefore, self.ctor, 1, 2);
       
       if (options.changed) 
         options.changed = wrapCBWithModel(options.changed, self.ctor, 0, 1);
@@ -134,19 +132,24 @@
       
       if (options.movedTo)
         options.movedTo = wrapCBWithModel(options.movedTo, self.ctor, 0, 3);
-      if (options.movedBefore)
-        options.movedBefore = wrapCBWithModel(options.movedBefore, self.ctor, 1, 2);
       
-      return options;
-    },
-  
-    observe: function(options) {
-      options = this._wrapObserveOptionsForModelledCollection(options);
       return this.cursor.observe(options);
     },
     
     observeChanges: function(options) {
-      options = this._wrapObserveOptionsForModelledCollection(options);
+      var self = this;
+      
+      if (options.added)
+        options.added = wrapCBWithModel(options.added, self.ctor, 1);
+      if (options.addedBefore) 
+        options.addedBefore = wrapCBWithModel(options.addedBefore, self.ctor, 1, 2);
+      
+      if (options.changed) 
+        options.changed = wrapCBWithModel(options.changed, self.ctor, 1);
+      
+      if (options.movedBefore)
+        options.movedBefore = wrapCBWithModel(options.movedBefore, self.ctor, 1);
+      
       return this.cursor.observeChanges(options);
     }
   });
