@@ -78,6 +78,10 @@
   }
   
   _.extend(ModelledCursor.prototype, {
+    _publishCursor: function(pub) {
+      return this.cursor._publishCursor(pub);
+    },
+    
     rewind: function() {
       this.cursor.rewind();
     },
