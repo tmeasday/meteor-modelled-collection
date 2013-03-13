@@ -14,7 +14,7 @@
   
     findOne: function () {
       var object = this.collection.findOne.apply(this.collection, _.toArray(arguments))
-      return new this.ctor(object);
+      return object && new this.ctor(object);
     }
   });
   
